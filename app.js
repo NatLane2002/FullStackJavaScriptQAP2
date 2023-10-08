@@ -6,57 +6,72 @@
  * Authors:
  *  1. Nathaniel Lane
  *************************/
+
 global.DEBUG = true;
 
 const http = require("http");
+const fs = require("fs"); // Require the 'fs' module for file operations
 
 const server = http.createServer(function (req, res) {
     switch (req.url) {
         case "/":
-            res.writeHead(200, { "Content-Type": "text/html" });
-            res.write("<h1>Home Page</h1>");
-            console.log("Home Page");
+            serveHTML("views/index.html", res);
             break;
         case "/about":
-            res.writeHead(200, { "Content-Type": "text/html" });
-            res.write("<h1>About Page</h1>");
-            console.log("About Page");
+            serveHTML("views/about.html", res);
             break;
         case "/contact":
-            res.writeHead(200, { "Content-Type": "text/html" });
-            res.write("<h1>Contact Page</h1>");
-            console.log("Contact Page");
+            serveHTML("views/contact.html", res);
             break;
         case "/products":
-            res.writeHead(200, { "Content-Type": "text/html" });
-            res.write("<h1>Products Page</h1>");
-            console.log("Products Page");
+            serveHTML("views/products.html", res);
             break;
         case "/subscribe":
-            res.writeHead(200, { "Content-Type": "text/html" });
-            res.write("<h1>Subscribe Page</h1>");
-            console.log("Subscribe Page");
+            serveHTML("views/subscribe.html", res);
             break;
         case "/login":
-            res.writeHead(200, { "Content-Type": "text/html" });
-            res.write("<h1>Login Page</h1>");
-            console.log("Login Page");
+            serveHTML("views/login.html", res);
             break;
         case "/register":
-            res.writeHead(200, { "Content-Type": "text/html" });
-            res.write("<h1>Register Page</h1>");
-            console.log("Register Page");
+            serveHTML("views/register.html", res);
             break;
         default:
-            res.writeHead(404, { "Content-Type": "text/html" });
-            res.write("<h1>Page Not Found</h1>");
-            res.write("<p>Sorry, the page you are looking for does not exist.</p>");
-            console.log("404 Page Not Found");
+            serveErrorPage(res);
             break;
     }
-    res.end();
 });
 
-server.listen(3000);
+// Helper function to serve HTML files
+function serveHTML(fileName, res) {
+    fs.readFile(fileName, "utf8", function (err, data) {
+        if (err) {
+            console.error(`Error reading file ${fileName}: ${err.message}`);
+            serve404(res);
+        } else {
+            res.writeHead(200, { "Content-Type": "text/html" });
+            res.write(data);
+            res.end();
+        }
+    });
+}
 
+// Helper function to serve a custom error page (html file)
+function serveErrorPage(res) {
+    fs.readFile("views/error.html", "utf8", function (err, data) {
+        if (err) {
+            console.error(`Error reading error page file: ${err.message}`);
+            // If the error page file is not found, serve a simple 404 page
+            res.writeHead(404, { "Content-Type": "text/html" });
+            res.write("<h1>404 Not Found</h1>");
+            res.write("<p>The page you are looking for does not exist.</p>");
+            res.end();
+        } else {
+            res.writeHead(404, { "Content-Type": "text/html" });
+            res.write(data);
+            res.end();
+        }
+    });
+}
+
+server.listen(3000);
 console.log("Listening on port 3000...");
