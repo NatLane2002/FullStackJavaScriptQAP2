@@ -9,9 +9,14 @@
 
 global.DEBUG = true;
 
+// Require the 'http' module for creating an HTTP server
 const http = require("http");
-const fs = require("fs"); // Require the 'fs' module for file operations
+// Require the 'fs' module for file operations
+const fs = require("fs");
+// Require the 'events' module for creating an event emitter
 const EventEmitter = require('events');
+// Require the 'logEvents' module for logging events
+const logEvents = require('./logEvents');
 
 // Create a new event emitter
 const myEmitter = new EventEmitter();
@@ -50,10 +55,14 @@ function serveHTML(fileName, res) {
     fs.readFile(fileName, "utf8", function (err, data) {
         if (err) {
             console.error(`Error reading file ${fileName}: ${err.message}`);
+            myEmitter.emit('log', 404, `The route ${fileName} could not be accessed - showing alternate page.`);
             serveErrorPage(res);
         } else {
             if (fileName != "views/index.html") {
                 myEmitter.emit('notHomeRouteAccessed', `The route ${fileName} was accessed - this is not the home route.`);
+                myEmitter.emit('log', 200, `The route ${fileName} was accessed - this is not the home route.`);
+            } else {
+                myEmitter.emit('log', 200, `The route ${fileName} was successfully accessed - this is the home route.`);
             }
             myEmitter.emit('httpStatus', 200);
             res.writeHead(200, { "Content-Type": "text/html" });
@@ -68,6 +77,7 @@ function serveErrorPage(res) {
     fs.readFile("views/error.html", "utf8", function (err, data) {
         if (err) {
             console.error(`Error reading error page file: ${err.message}`);
+            myEmitter.emit('log', 404, `The route ${fileName} could not be accessed - showing alternate page.`);
             // If the error page file is not found, serve a simple 404 page
             res.writeHead(404, { "Content-Type": "text/html" });
             res.write("<h1>404 Not Found</h1>");
@@ -75,6 +85,7 @@ function serveErrorPage(res) {
             res.end();
         } else {
             myEmitter.emit('httpStatus', 404);
+            myEmitter.emit('log', 404, `Your'e lost! This page does not exist.`);
             res.writeHead(404, { "Content-Type": "text/html" });
             res.write(data);
             res.end();
@@ -92,6 +103,12 @@ myEmitter.on('httpStatus', (statusCode) => {
 // This event is emitted when a client accesses a route that is not the home route. It provides visibility into the routes that are being accessed. This is useful for debugging and troubleshooting.
 myEmitter.on('notHomeRouteAccessed', (message) => {
     console.warn(`Message: ${message}`);
+});
+
+// Event emitter to call the logEvents function
+// This event is emitted when a client accesses a route that is not the home route. It provides visibility into the routes that are being accessed. This is useful for debugging and troubleshooting.
+myEmitter.on('log', (code, message) => {
+    logEvents(code, message);
 });
 
 // Start the server
